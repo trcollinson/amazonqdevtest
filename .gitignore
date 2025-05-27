@@ -41,3 +41,8 @@ ENV/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml

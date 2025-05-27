@@ -32,9 +32,13 @@ Run the unit tests with:
 # Install test dependencies
 pip install -r tests/requirements.txt
 
-# Run tests
+# Run tests (includes coverage report)
 pytest tests/
 ```
+
+The test command will automatically generate a coverage report in the terminal and an HTML report in the `htmlcov` directory.
+
+To view the HTML coverage report, open `htmlcov/index.html` in your browser.
 
 ## Adding New Endpoints
 

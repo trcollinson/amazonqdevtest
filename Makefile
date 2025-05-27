@@ -1,7 +1,10 @@
-.PHONY: test build deploy local
+.PHONY: test test-cov build deploy local
 
 test:
 	pytest tests/
+
+test-cov:
+	pytest --cov=hello_world --cov-report=term --cov-report=html tests/
 
 build:
 	sam build
