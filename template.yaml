@@ -1,9 +1,50 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  SAM API Project
+  SAM API Project with Cognito Authentication
   
 Resources:
+  # Cognito User Pool
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: api-user-pool
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+
+  # Cognito User Pool Client
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: api-app-client
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: CognitoUserPoolAuthorizer
+        Authorizers:
+          CognitoUserPoolAuthorizer:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
+
+  # Lambda Function
   HelloWorldFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -18,6 +59,9 @@ Resources:
           Properties:
             Path: /hello
             Method: get
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoUserPoolAuthorizer
 
 Outputs:
   HelloWorldFunction:
@@ -25,7 +69,10 @@ Outputs:
     Value: !GetAtt HelloWorldFunction.Arn
   HelloWorldApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function"
-    Value: !Ref HelloWorldFunction
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  CognitoUserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref CognitoUserPool
+  CognitoUserPoolClientId:
+    Description: "Cognito User Pool Client ID"
+    Value: !Ref CognitoUserPoolClient

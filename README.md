@@ -1,6 +1,6 @@
-# SAM API Project
+# SAM API Project with Cognito Authentication
 
-This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI.
+This project contains source code and supporting files for a serverless application with Cognito authentication that you can deploy with the SAM CLI.
 
 ## Project Structure
 
@@ -22,7 +22,53 @@ The first command will build the source of your application. The second command 
 
 ## API Endpoints
 
-- GET /hello - Returns a Hello World message
+- GET /hello - Returns a Hello World message (requires authentication)
+
+## Authentication
+
+The API is secured with Amazon Cognito. To access the endpoints, you need to:
+
+1. Create a user in the Cognito User Pool
+2. Authenticate and get an ID token
+3. Include the ID token in the Authorization header of your requests
+
+### Creating a User
+
+```bash
+# Replace USER_POOL_ID with the value from the stack outputs
+aws cognito-idp admin-create-user \
+  --user-pool-id USER_POOL_ID \
+  --username user@example.com \
+  --temporary-password Temp123! \
+  --user-attributes Name=email,Value=user@example.com
+
+# Set a permanent password
+aws cognito-idp admin-set-user-password \
+  --user-pool-id USER_POOL_ID \
+  --username user@example.com \
+  --password YourPassword123! \
+  --permanent
+```
+
+### Getting an Authentication Token
+
+```bash
+# Replace USER_POOL_ID and CLIENT_ID with values from the stack outputs
+aws cognito-idp initiate-auth \
+  --auth-flow USER_PASSWORD_AUTH \
+  --client-id CLIENT_ID \
+  --auth-parameters USERNAME=user@example.com,PASSWORD=YourPassword123!
+```
+
+This will return an ID token that you can use to authenticate API requests.
+
+### Making Authenticated Requests
+
+```bash
+# Replace API_URL with the HelloWorldApi value from stack outputs
+# Replace ID_TOKEN with the token from the previous step
+curl -H "Authorization: ID_TOKEN" API_URL
+```
 
 ## Testing
 
