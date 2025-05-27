@@ -7,6 +7,7 @@ This project contains source code and supporting files for a serverless applicat
 - `hello_world/` - Code for the application's Lambda function.
 - `template.yaml` - A template that defines the application's AWS resources.
 - `samconfig.toml` - Configuration file for the SAM CLI.
+- `tests/` - Unit tests for the application.
 
 ## Deploy the application
 
@@ -23,10 +24,23 @@ The first command will build the source of your application. The second command 
 
 - GET /hello - Returns a Hello World message
 
+## Testing
+
+Run the unit tests with:
+
+```bash
+# Install test dependencies
+pip install -r tests/requirements.txt
+
+# Run tests
+pytest tests/
+```
+
 ## Adding New Endpoints
 
 To add new endpoints to this API:
 
 1. Define new functions in the `template.yaml` file
 2. Create corresponding handlers in separate directories
-3. Run `sam build` and `sam deploy` to update your deployment
+3. Add unit tests for the new endpoints
+4. Run `sam build` and `sam deploy` to update your deployment
