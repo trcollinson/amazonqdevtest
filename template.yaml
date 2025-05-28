@@ -44,7 +44,7 @@ Resources:
           CognitoUserPoolAuthorizer:
             UserPoolArn: !GetAtt CognitoUserPool.Arn
 
-  # Lambda Function
+  # Lambda Function - Hello World
   HelloWorldFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -63,6 +63,44 @@ Resources:
             Auth:
               Authorizer: CognitoUserPoolAuthorizer
 
+  # Lambda Function - Users
+  UsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: users/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminGetUser
+              Resource: !GetAtt CognitoUserPool.Arn
+      Events:
+        ListUsers:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: get
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoUserPoolAuthorizer
+        GetUser:
+          Type: Api
+          Properties:
+            Path: /users/{username}
+            Method: get
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoUserPoolAuthorizer
+
 Outputs:
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
@@ -70,6 +108,15 @@ Outputs:
   HelloWorldApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  UsersFunction:
+    Description: "Users Lambda Function ARN"
+    Value: !GetAtt UsersFunction.Arn
+  UsersListApi:
+    Description: "API Gateway endpoint URL for Prod stage for listing users"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/users/"
+  UserGetApi:
+    Description: "API Gateway endpoint URL for Prod stage for getting a specific user"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/users/{username}"
   CognitoUserPoolId:
     Description: "Cognito User Pool ID"
     Value: !Ref CognitoUserPool
