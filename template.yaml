@@ -75,6 +75,7 @@ Resources:
       Environment:
         Variables:
           USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -82,6 +83,8 @@ Resources:
               Action:
                 - cognito-idp:ListUsers
                 - cognito-idp:AdminGetUser
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminSetUserPassword
               Resource: !GetAtt CognitoUserPool.Arn
       Events:
         ListUsers:
@@ -97,6 +100,14 @@ Resources:
           Properties:
             Path: /users/{username}
             Method: get
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoUserPoolAuthorizer
+        CreateUser:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: post
             RestApiId: !Ref ApiGateway
             Auth:
               Authorizer: CognitoUserPoolAuthorizer
@@ -117,6 +128,9 @@ Outputs:
   UserGetApi:
     Description: "API Gateway endpoint URL for Prod stage for getting a specific user"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/users/{username}"
+  UserCreateApi:
+    Description: "API Gateway endpoint URL for Prod stage for creating a user"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/users"
   CognitoUserPoolId:
     Description: "Cognito User Pool ID"
     Value: !Ref CognitoUserPool

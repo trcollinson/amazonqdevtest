@@ -15,6 +15,7 @@ This project contains source code and supporting files for a serverless applicat
 - **GET /hello** - Returns a Hello World message (requires authentication)
 - **GET /users** - Lists all users in the Cognito User Pool (requires authentication)
 - **GET /users/{username}** - Gets detailed information about a specific user (requires authentication)
+- **POST /users** - Creates a new user with a permanent password (requires authentication)
 
 ## Deploy the application
 
@@ -51,6 +52,18 @@ aws cognito-idp admin-set-user-password \
   --username user@example.com \
   --password YourPassword123! \
   --permanent
+```
+
+Alternatively, you can use the POST /users endpoint to create a user with a permanent password:
+
+```bash
+# Replace API_URL with the UserCreateApi value from stack outputs
+# Replace ID_TOKEN with a valid authentication token
+curl -X POST \
+  -H "Authorization: ID_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"newuser@example.com","password":"Password123","name":"New User"}' \
+  API_URL
 ```
 
 ### Getting an Authentication Token
