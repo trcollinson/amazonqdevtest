@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct S3 Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Direct S3 Upload Test</h1>
+        
+        <div class="form-group">
+            <label for="presignedUrl">Pre-signed URL:</label>
+            <input type="text" id="presignedUrl" style="width: 100%;" placeholder="Paste your pre-signed URL here">
+        </div>
+        
+        <div class="form-group">
+            <label for="contentType">Content Type:</label>
+            <input type="text" id="contentType" style="width: 100%;" placeholder="e.g., image/jpeg, application/pdf">
+        </div>
+        
+        <div class="form-group">
+            <label for="fileInput">Select File:</label>
+            <input type="file" id="fileInput">
+        </div>
+        
+        <button onclick="uploadFile()">Upload File</button>
+        
+        <div id="result">Results will appear here...</div>
+    </div>
+
+    <script>
+        async function uploadFile() {
+            const resultDiv = document.getElementById('result');
+            const fileInput = document.getElementById('fileInput');
+            const presignedUrl = document.getElementById('presignedUrl').value;
+            const contentType = document.getElementById('contentType').value;
+            
+            if (!fileInput.files.length) {
+                resultDiv.textContent = 'Please select a file first.';
+                return;
+            }
+            
+            if (!presignedUrl) {
+                resultDiv.textContent = 'Please enter the pre-signed URL.';
+                return;
+            }
+            
+            if (!contentType) {
+                resultDiv.textContent = 'Please enter the content type.';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            try {
+                resultDiv.textContent = 'Uploading file to S3...';
+                
+                // Make the PUT request to the pre-signed URL
+                const response = await fetch(presignedUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': contentType
+                    },
+                    body: file
+                });
+                
+                // Log all response headers for debugging
+                resultDiv.textContent += '\n\nResponse Headers:';
+                for (const [key, value] of response.headers.entries()) {
+                    resultDiv.textContent += `\n${key}: ${value}`;
+                }
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to upload file: ${response.status} ${response.statusText}\n${errorText}`);
+                }
+                
+                resultDiv.textContent += '\n\nUpload successful!';
+                resultDiv.textContent += '\nYou can now check the S3 bucket to verify the file was uploaded.';
+                
+            } catch (error) {
+                resultDiv.textContent += `\n\nError: ${error.message}`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

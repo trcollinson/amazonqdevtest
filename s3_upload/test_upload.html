@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>S3 Upload Test</h1>
+        
+        <div class="form-group">
+            <label for="apiUrl">API URL:</label>
+            <input type="text" id="apiUrl" style="width: 100%;" placeholder="https://your-api-gateway-url/Prod/upload-url">
+        </div>
+        
+        <div class="form-group">
+            <label for="authToken">Authorization Token:</label>
+            <input type="text" id="authToken" style="width: 100%;" placeholder="Your Cognito ID token">
+        </div>
+        
+        <div class="form-group">
+            <label for="fileInput">Select File:</label>
+            <input type="file" id="fileInput">
+        </div>
+        
+        <button onclick="uploadFile()">Upload File</button>
+        
+        <div id="result">Results will appear here...</div>
+    </div>
+
+    <script>
+        async function uploadFile() {
+            const resultDiv = document.getElementById('result');
+            const fileInput = document.getElementById('fileInput');
+            const apiUrl = document.getElementById('apiUrl').value;
+            const authToken = document.getElementById('authToken').value;
+            
+            if (!fileInput.files.length) {
+                resultDiv.textContent = 'Please select a file first.';
+                return;
+            }
+            
+            if (!apiUrl) {
+                resultDiv.textContent = 'Please enter the API URL.';
+                return;
+            }
+            
+            if (!authToken) {
+                resultDiv.textContent = 'Please enter your authorization token.';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            try {
+                resultDiv.textContent = 'Step 1: Getting pre-signed URL...';
+                
+                // Step 1: Get the pre-signed URL
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_name: file.name,
+                        content_type: file.type
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to get pre-signed URL: ${response.status} ${response.statusText}\n${errorText}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.textContent += `\nReceived pre-signed URL: ${data.signed_url.substring(0, 50)}...`;
+                resultDiv.textContent += `\nFile key: ${data.file_key}`;
+                
+                // Step 2: Upload the file using the pre-signed URL
+                resultDiv.textContent += '\n\nStep 2: Uploading file to S3...';
+                
+                const uploadResponse = await fetch(data.signed_url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+                
+                if (!uploadResponse.ok) {
+                    const errorText = await uploadResponse.text();
+                    throw new Error(`Failed to upload file: ${uploadResponse.status} ${uploadResponse.statusText}\n${errorText}`);
+                }
+                
+                resultDiv.textContent += '\nUpload successful!';
+                resultDiv.textContent += `\n\nFile URL: https://${data.bucket}.s3.amazonaws.com/${data.file_key}`;
+                
+            } catch (error) {
+                resultDiv.textContent += `\n\nError: ${error.message}`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -31,12 +31,21 @@ def generate_signed_url(file_name, content_type):
     try:
         # Generate a unique key for the file
         file_extension = os.path.splitext(file_name)[1] if '.' in file_name else ''
+        # Strip any leading dots from the extension
+        file_extension = file_extension.lstrip('.')
+        # Add the dot back only if there's an extension
+        if file_extension:
+            file_extension = f".{file_extension}"
         unique_key = f"uploads/{uuid.uuid4()}{file_extension}"
         
-        # Create S3 client
-        s3_client = boto3.client('s3')
+        # Log the bucket name and key for debugging
+        logger.info(f"Generating pre-signed URL for bucket: {BUCKET_NAME}, key: {unique_key}")
         
-        # Generate the pre-signed URL
+        # Use boto3 client with explicit region and virtual addressing style
+        region = os.environ.get('AWS_REGION', 'us-east-1')
+        config = boto3.session.Config(s3={'addressing_style': 'virtual'})
+        s3_client = boto3.client('s3', region_name=region, config=config)
+        
         signed_url = s3_client.generate_presigned_url(
             'put_object',
             Params={
@@ -44,14 +53,17 @@ def generate_signed_url(file_name, content_type):
                 'Key': unique_key,
                 'ContentType': content_type
             },
-            ExpiresIn=EXPIRATION,
-            HttpMethod='PUT'
+            ExpiresIn=EXPIRATION
         )
+        
+        # Log the final URL and key for debugging
+        logger.info(f"Generated pre-signed URL for key: {unique_key}")
         
         return {
             'signed_url': signed_url,
             'file_key': unique_key,
             'bucket': BUCKET_NAME,
+            'content_type': content_type,
             'expiration_seconds': EXPIRATION,
             'max_size': MAX_UPLOAD_SIZE
         }

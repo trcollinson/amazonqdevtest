@@ -16,9 +16,27 @@ Resources:
             AllowedMethods:
               - PUT
               - GET
+              - POST
+              - HEAD
             AllowedOrigins:
               - "*"
             MaxAge: 3600
+      
+  # S3 Bucket Policy to allow uploads with more permissions
+  UserUploadsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UserUploadsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:PutObjectAcl'
+            Resource: !Sub "${UserUploadsBucket.Arn}/*"
 
   # Cognito User Pool
   CognitoUserPool:
@@ -186,6 +204,8 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:GetObject
               Resource: !Sub "${UserUploadsBucket.Arn}/*"
       Events:
         S3Upload:
