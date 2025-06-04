@@ -1,4 +1,4 @@
-.PHONY: test test-cov build deploy local
+.PHONY: test test-cov build deploy local install-requirements
 
 test:
 	pytest tests/
@@ -14,3 +14,7 @@ deploy:
 
 local:
 	sam local start-api
+
+install-requirements:
+	@echo "Installing all requirements.txt files in the project..."
+	@find . -name "requirements.txt" -type f -not -path "*/\.*" -exec pip install -r {} \;
