@@ -4,7 +4,7 @@ test:
 	pytest tests/
 
 test-cov:
-	pytest --cov=hello_world --cov=users --cov-report=term --cov-report=html tests/
+	pytest --cov=hello_world --cov=users --cov=website_to_text --cov-report=term --cov-report=html tests/
 
 build:
 	sam build

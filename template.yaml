@@ -112,6 +112,44 @@ Resources:
             Auth:
               Authorizer: CognitoUserPoolAuthorizer
 
+  # Lambda Function - Website to Text
+  WebsiteToTextFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: website_to_text/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Timeout: 60
+      MemorySize: 512
+      Environment:
+        Variables:
+          BEDROCK_REGION: !Ref AWS::Region
+          DEFAULT_MODEL: amazon.nova-pro-v1:0
+          MAX_CONTENT_LENGTH: 10000
+          TIMEOUT_SECONDS: 30
+          INFERENCE_PROFILE_ARN: arn:aws:bedrock:us-west-2:762778437347:inference-profile/us.amazon.nova-pro-v1:0
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:ListFoundationModels
+                - bedrock:ListInferenceProfiles
+                - bedrock:CreateInferenceProfile
+              Resource: '*'
+      Events:
+        WebsiteToText:
+          Type: Api
+          Properties:
+            Path: /website-to-text
+            Method: post
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoUserPoolAuthorizer
+
 Outputs:
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
@@ -131,6 +169,12 @@ Outputs:
   UserCreateApi:
     Description: "API Gateway endpoint URL for Prod stage for creating a user"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/users"
+  WebsiteToTextFunction:
+    Description: "Website to Text Lambda Function ARN"
+    Value: !GetAtt WebsiteToTextFunction.Arn
+  WebsiteToTextApi:
+    Description: "API Gateway endpoint URL for Prod stage for website to text function"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/website-to-text"
   CognitoUserPoolId:
     Description: "Cognito User Pool ID"
     Value: !Ref CognitoUserPool

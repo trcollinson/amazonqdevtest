@@ -3,9 +3,10 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "sam-api-project"
-region = "us-east-1"
+region = "us-west-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
 resolve_s3 = true
 profile = "personal"
+s3_prefix = "sam-api-project"
