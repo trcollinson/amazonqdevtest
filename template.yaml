@@ -4,6 +4,22 @@ Description: >
   SAM API Project with Cognito Authentication
   
 Resources:
+  # S3 Bucket for File Uploads
+  UserUploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "user-uploads-${AWS::AccountId}-${AWS::Region}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - PUT
+              - GET
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3600
+
   # Cognito User Pool
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -150,6 +166,37 @@ Resources:
             Auth:
               Authorizer: CognitoUserPoolAuthorizer
 
+  # Lambda Function - S3 Upload URL Generator
+  S3UploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3_upload/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref UserUploadsBucket
+          URL_EXPIRATION_SECONDS: 300
+          MAX_UPLOAD_SIZE_MB: 10
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub "${UserUploadsBucket.Arn}/*"
+      Events:
+        S3Upload:
+          Type: Api
+          Properties:
+            Path: /upload-url
+            Method: post
+            RestApiId: !Ref ApiGateway
+            Auth:
+              Authorizer: CognitoUserPoolAuthorizer
+
 Outputs:
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
@@ -175,6 +222,15 @@ Outputs:
   WebsiteToTextApi:
     Description: "API Gateway endpoint URL for Prod stage for website to text function"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/website-to-text"
+  S3UploadFunction:
+    Description: "S3 Upload URL Generator Lambda Function ARN"
+    Value: !GetAtt S3UploadFunction.Arn
+  S3UploadApi:
+    Description: "API Gateway endpoint URL for Prod stage for S3 upload URL generator"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/upload-url"
+  UserUploadsBucket:
+    Description: "S3 bucket for user uploads"
+    Value: !Ref UserUploadsBucket
   CognitoUserPoolId:
     Description: "Cognito User Pool ID"
     Value: !Ref CognitoUserPool
